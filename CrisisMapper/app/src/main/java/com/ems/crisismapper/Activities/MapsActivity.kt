@@ -1,44 +1,37 @@
 package com.ems.crisismapper.Activities
 
-import android.support.v7.app.AppCompatActivity
+
+import android.content.Context
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.Toast
+import com.ems.crisismapper.API.APIClient2
+import com.ems.crisismapper.POJO.Tweet
 import com.ems.crisismapper.R
-
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-
-import com.ems.crisismapper.API.APIClient;
-import com.ems.crisismapper.API.TwitterAPIService
-import com.ems.crisismapper.POJO.TwitterPojo;
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+
+
+
+
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
 
-    private val apiClient = APIClient()
-    val twitterApiServe by lazy {
-        TwitterAPIService.create()
-    }
+    private val apiClient = APIClient2()
 
-    var disposable: Disposable? = null
-
-    var latArray: ArrayList<Double> = ArrayList()
-    var lngArray: ArrayList<Double> = ArrayList()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,14 +47,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun twitterApiCall() {
-        disposable =
-                twitterApiServe.getTweets("query", "json", "search", srsearch)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                { result ->  Toast.makeText(this, "${result.query.searchinfo.totalhits} result found", Toast.LENGTH_SHORT).show()  },
-                                { error -> Toast.makeText(this, error.message, Toast.LENGTH_SHORT).show() }
-                        )
+        apiClient.apiService.getTweets().enqueue(object : Callback<List<Tweet>> {
+            override fun onResponse(call: Call<List<Tweet>>, response: Response<List<Tweet>>) {
+                val tweets = response.body()
+
+            }
+
+            override fun onFailure(call: Call<List<Tweet>>, t: Throwable) {
+                Log.d("aldmar: ", t.message)
+            }
+        })
+
 
     }
 
@@ -83,8 +79,4 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
-    override fun onPause() {
-        super.onPause()
-        disposable?.dispose()
-    }
 }
